@@ -21,7 +21,6 @@ namespace CbInvestingTool
             PriceHistoryService priceHistoryService = new PriceHistoryService(priceHistoryRepository);
 
             List<Stock> stocks = stockService.GetStocks();
-            Analyzer analyzer = new Analyzer(stockService, priceHistoryService);
 
             var volumeAverage = 0;
             var senokuSpanB = 0m;
@@ -32,18 +31,20 @@ namespace CbInvestingTool
             {
                 if (stock.LastPrice >= 1m && stock.LastPrice <= 5m)
                 {
-                    volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate.AddDays(-20), processDate);
-                    senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol, processDate);
-                    vwap = analyzer.GetVwap(stock.Symbol, processDate);
-                    List<TradingDay> priceHistory = priceHistoryService.GetPriceHistory(stock.Symbol, processDate, processDate);
+                    IEnumerable<TradingDay> priceHistory = priceHistoryService.GetPriceHistory(stock.Symbol, processDate.AddDays(-365), processDate).OrderBy(x => x.Date);
+                    Analyzer analyzer = new Analyzer(stocks, priceHistory);
 
-                    if (priceHistory.Count > 0)
+                    volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, 20);
+                    senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol);
+                    vwap = analyzer.GetVwap(stock.Symbol);
+
+                    if (priceHistory.Count() > 0)
                     {
                         lastTypicalPrice = (priceHistory.Last().HighPrice + priceHistory.Last().LowPrice + priceHistory.Last().ClosePrice) / 3;
 
-                        if (lastTypicalPrice < senokuSpanB && priceHistory.Last().Volume > (volumeAverage * 0.5) &&
-                            priceHistory.Last().OpenPrice > vwap && priceHistory.Last().ClosePrice < vwap)
-                            Console.WriteLine("Stock: {0}, Price: {1}, VolAvg: {2}, SenSpanB: {3}, VWAP: {4}", stock.Symbol, lastTypicalPrice, volumeAverage, senokuSpanB, vwap);
+                        if (lastTypicalPrice > senokuSpanB && lastTypicalPrice > vwap && priceHistory.Last().Volume > (volumeAverage * 0.5) &&
+                            priceHistory.Last().OpenPrice < vwap && priceHistory.Last().ClosePrice > vwap)
+                         Console.WriteLine("Stock: {0}, Price: {1}, VolAvg: {2}, SenSpanB: {3}, VWAP: {4}", stock.Symbol, lastTypicalPrice, volumeAverage, senokuSpanB, vwap);
                     }
                 }                
             }

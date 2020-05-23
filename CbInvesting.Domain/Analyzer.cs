@@ -10,21 +10,18 @@ namespace CbInvesting.Domain
 {
     public class Analyzer
     {
-        private StockService _stockService;
-        private PriceHistoryService _priceHistoryService;
+        private List<Stock> _stocks;
+        private IEnumerable<TradingDay> _priceHistory;
 
-        public Analyzer(StockService stockService, PriceHistoryService priceHistoryService)
+        public Analyzer(List<Stock> stocks, IEnumerable<TradingDay> priceHistory)
         {
-            _stockService = stockService;
-            _priceHistoryService = priceHistoryService;
+            _stocks = stocks;
+            _priceHistory = priceHistory;
         }
 
-        public int GetVolumeAverage(string symbol, DateTime startDate, DateTime endDate)
+        public int GetVolumeAverage(string symbol, int numberOfDays)
         {
-            startDate = formatDate(startDate);
-            endDate = formatDate(endDate);
-
-            List<TradingDay> priceHistory = _priceHistoryService.GetPriceHistory(symbol.ToUpper(), startDate, endDate);
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(numberOfDays * -1));
 
             int volumeSum = 0;
             foreach (var tradingDay in priceHistory)
@@ -32,16 +29,13 @@ namespace CbInvesting.Domain
                 volumeSum += tradingDay.Volume;
             }
 
-            if (priceHistory.Count == 0) return 0;
-            else return volumeSum / priceHistory.Count;
+            if (priceHistory.Count() == 0) return 0;
+            else return volumeSum / priceHistory.Count();
         }
 
-        public decimal GetSenokuSpanB(string symbol, DateTime processDate)
+        public decimal GetSenokuSpanB(string symbol)
         {
-            DateTime startDate = formatDate(processDate.AddDays(-52));
-            DateTime endDate = formatDate(processDate);
-
-            List<TradingDay> priceHistory = _priceHistoryService.GetPriceHistory(symbol.ToUpper(), startDate, endDate);
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(-52));
 
             decimal highestPrice = 0.00m;
             decimal lowestPrice = 0.00m;
@@ -57,12 +51,9 @@ namespace CbInvesting.Domain
             return (highestPrice + lowestPrice) / 2;
         }
 
-        public decimal GetVwap(string symbol, DateTime processDate)
+        public decimal GetVwap(string symbol)
         {
-            DateTime startDate = formatDate(processDate.AddDays(-20));
-            DateTime endDate = formatDate(processDate);
-
-            List<TradingDay> priceHistory = _priceHistoryService.GetPriceHistory(symbol.ToUpper(), startDate, endDate);
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(-20));
 
             decimal cumulativeTpv = 0m;
             decimal cumulativeVolume = 0m;
@@ -76,9 +67,8 @@ namespace CbInvesting.Domain
             else return cumulativeTpv / cumulativeVolume;
         }
 
-        public List<Stock> GetLowPointStocks(DateTime startDate, DateTime endDate)
+        /*public List<Stock> GetLowPointStocks(DateTime startDate, DateTime endDate)
         {
-            IEnumerable<Stock> stocks = _stockService.GetStocks().Where(s => s.LastPrice >= 1.00m && s.AskPrice <= 5.00m);;
             List<Stock> lowPointStocks = new List<Stock>();
 
             var timeOfDay = new TimeSpan(5, 0, 0); //5AM EST
@@ -124,7 +114,7 @@ namespace CbInvesting.Domain
             }
 
             return lowestPrice;
-        }
+        }*/
 
         private DateTime formatDate(DateTime date)
         {
