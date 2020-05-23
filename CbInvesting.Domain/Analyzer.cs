@@ -33,9 +33,9 @@ namespace CbInvesting.Domain
             else return volumeSum / priceHistory.Count();
         }
 
-        public decimal GetSenokuSpanB(string symbol)
+        public decimal GetSenokuSpanB(string symbol, int numberOfDays)
         {
-            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(-52));
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(numberOfDays * -1));
 
             decimal highestPrice = 0.00m;
             decimal lowestPrice = 0.00m;
@@ -51,9 +51,9 @@ namespace CbInvesting.Domain
             return (highestPrice + lowestPrice) / 2;
         }
 
-        public decimal GetVwap(string symbol)
+        public decimal GetVwap(string symbol, int numberOfDays)
         {
-            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(-20));
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date >= _priceHistory.Last().Date.AddDays(numberOfDays * -1));
 
             decimal cumulativeTpv = 0m;
             decimal cumulativeVolume = 0m;

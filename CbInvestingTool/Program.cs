@@ -35,8 +35,8 @@ namespace CbInvestingTool
                     Analyzer analyzer = new Analyzer(stocks, priceHistory);
 
                     volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, 20);
-                    senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol);
-                    vwap = analyzer.GetVwap(stock.Symbol);
+                    senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol, 52);
+                    vwap = analyzer.GetVwap(stock.Symbol, 20);
 
                     if (priceHistory.Count() > 0)
                     {
