@@ -22,5 +22,6 @@ namespace CbInvesting.Domain
         public decimal RegularMarketLastPrice { get; set; }
         public double RegularMarketPercentChangeInDouble { get; set; }
         public double LastChangePct { get; set; }
+        public decimal SpanBPercentage { get; set; }
     }
 }
