@@ -71,6 +71,30 @@ namespace CbInvesting.Domain
             else return cumulativeTpv / cumulativeVolume;
         }
 
+        public decimal GetPercentR(string symbol, DateTime processDate, int numberOfDays)
+        {
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
+            priceHistory = getPriceHistorySpan(numberOfDays);
+
+            if (priceHistory.Count() == numberOfDays)
+            {
+                decimal highestPrice = GetHighestPrice(symbol, processDate, numberOfDays);
+                decimal lowestPrice = GetLowestPrice(symbol, processDate, numberOfDays);
+                decimal closePrice = priceHistory.Last().ClosePrice;
+
+                return ((highestPrice - closePrice) / (highestPrice - lowestPrice)) * 100;
+            }
+            else return 0m;
+        }
+
+        public decimal GetCloseLocationValue(string symbol, DateTime processDate)
+        {
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
+            TradingDay tradingDay = priceHistory.Last();
+
+            return ((tradingDay.ClosePrice - tradingDay.LowPrice) - (tradingDay.HighPrice - tradingDay.ClosePrice)) / (tradingDay.HighPrice - tradingDay.LowPrice);
+        }
+
         public decimal GetAveragePrice(string symbol, DateTime processDate, int numberOfDays)
         {
             IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
@@ -87,6 +111,48 @@ namespace CbInvesting.Domain
                 return cumumalitveAverage / numberOfDays;
             }
             else return 0m;            
+        }
+
+        public decimal GetHighestPrice(string symbol, DateTime processDate, int numberOfDays)
+        {
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
+            priceHistory = getPriceHistorySpan(numberOfDays);
+
+            if (priceHistory.Count() == numberOfDays)
+            {
+                decimal highestPrice = 0.00m;
+                foreach (var tradingDay in priceHistory)
+                {
+                    if (tradingDay.ClosePrice > highestPrice)
+                        highestPrice = tradingDay.ClosePrice;
+                }
+
+                return highestPrice;
+            }
+            else return 0m;
+        }
+
+        public decimal GetLowestPrice(string symbol, DateTime processDate, int numberOfDays)
+        {
+            IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
+            priceHistory = getPriceHistorySpan(numberOfDays);
+
+            if (priceHistory.Count() == numberOfDays)
+            {
+                DateTime worstTradingDay = new DateTime();
+                decimal lowestPrice = 0.00m;
+                foreach (var tradingDay in priceHistory)
+                {
+                    if (worstTradingDay == DateTime.MinValue || tradingDay.ClosePrice < lowestPrice)
+                    {
+                        worstTradingDay = tradingDay.Date;
+                        lowestPrice = tradingDay.ClosePrice;
+                    }
+                }
+
+                return lowestPrice;
+            }
+            else return 0m;
         }
 
         private List<TradingDay> getPriceHistorySpan(int numberOfDays)
@@ -134,23 +200,6 @@ namespace CbInvesting.Domain
 
             lowPointStocks = lowPointStocks.OrderBy(s => s.LastChangePct).ToList();
             return lowPointStocks;
-        }
-
-        private decimal getLowestTradingPrice(List<TradingDay> priceHistory)
-        {
-            DateTime worstTradingDay = new DateTime();
-            decimal lowestPrice = 0.00m;
-
-            foreach (var tradingDay in priceHistory)
-            {
-                if (worstTradingDay == DateTime.MinValue || tradingDay.ClosePrice < lowestPrice)
-                {
-                    worstTradingDay = tradingDay.Date;
-                    lowestPrice = tradingDay.ClosePrice;
-                }
-            }
-
-            return lowestPrice;
         }*/
 
         private DateTime formatDate(DateTime date)

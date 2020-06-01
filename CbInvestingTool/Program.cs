@@ -21,7 +21,8 @@ namespace CbInvestingTool
             PriceHistoryService priceHistoryService = new PriceHistoryService(priceHistoryRepository);
             List<Stock> stocks = stockService.GetStocks();
             List<Stock> topStocks = new List<Stock>();
-            var processDate = new DateTime(2020, 05, 18);
+            //var processDate = DateTime.Now; 
+            var processDate = new DateTime(2020, 05, 26);
 
             foreach (var stock in stocks)
             {
@@ -30,14 +31,23 @@ namespace CbInvestingTool
                     IEnumerable<TradingDay> priceHistory = priceHistoryService.GetPriceHistory(stock.Symbol, DateTime.Now.AddDays(-365), DateTime.Now).OrderBy(x => x.Date);
                     Analyzer analyzer = new Analyzer(stocks, priceHistory);
 
-                    var volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate, 20);
+                    decimal percentR = analyzer.GetPercentR(stock.Symbol, processDate, 14);
+                    if (percentR > 0m && percentR <= 10m)
+                    {
+                        var closeLocationValue = analyzer.GetCloseLocationValue(stock.Symbol, processDate);
+
+                        if (closeLocationValue > 0.5m)
+                            Console.WriteLine("Top Stock: {0}, Pct: {1}, CLV: {2}", stock.Symbol, percentR, closeLocationValue);
+                    }
+
+                    /*var volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate, 20);
                     var senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol, processDate, 52);
                     var vwap = analyzer.GetVwap(stock.Symbol, processDate, 20);
 
                     if (volumeAverage > 0 && senokuSpanB > 0 && vwap > 0)
                     {
                         var tradingDay = priceHistory.Where(x => x.Date.Date <= processDate.Date).OrderByDescending(x => x.Date).First();
-                        var lastTypicalPrice = (tradingDay.HighPrice + tradingDay.LowPrice + tradingDay.ClosePrice) / 3;
+                        var lastTypicalPrice = stock.LastPrice; //(tradingDay.HighPrice + tradingDay.LowPrice + tradingDay.ClosePrice) / 3;
 
                         if (lastTypicalPrice < senokuSpanB 
                             && tradingDay.Volume > (volumeAverage * 0.5) &&
@@ -46,14 +56,14 @@ namespace CbInvestingTool
                             stock.SpanBPercentage = ((lastTypicalPrice / senokuSpanB));
                             topStocks.Add(stock);
                         }                         
-                    }
+                    }*/
                 }                
             }
 
-            foreach (var stock in topStocks)
+            /*foreach (var stock in topStocks)
             {
                 Console.WriteLine("Top Stock: {0}, Pct: {1}", stock.Symbol, stock.SpanBPercentage);
-            }
+            }*/
             
             Console.WriteLine("DONE!");
             Console.ReadLine();
