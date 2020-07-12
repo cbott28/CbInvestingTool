@@ -92,7 +92,9 @@ namespace CbInvesting.Domain
             IEnumerable<TradingDay> priceHistory = _priceHistory.Where(x => x.Date <= processDate);
             TradingDay tradingDay = priceHistory.Last();
 
-            return ((tradingDay.ClosePrice - tradingDay.LowPrice) - (tradingDay.HighPrice - tradingDay.ClosePrice)) / (tradingDay.HighPrice - tradingDay.LowPrice);
+            if (tradingDay.HighPrice - tradingDay.LowPrice == 0) return 0;
+            else
+                return ((tradingDay.ClosePrice - tradingDay.LowPrice) - (tradingDay.HighPrice - tradingDay.ClosePrice)) / (tradingDay.HighPrice - tradingDay.LowPrice);
         }
 
         public decimal GetAveragePrice(string symbol, DateTime processDate, int numberOfDays)

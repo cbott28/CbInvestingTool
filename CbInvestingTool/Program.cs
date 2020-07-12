@@ -20,9 +20,9 @@ namespace CbInvestingTool
             PriceHistoryRepository priceHistoryRepository = new PriceHistoryRepository();
             PriceHistoryService priceHistoryService = new PriceHistoryService(priceHistoryRepository);
             List<Stock> stocks = stockService.GetStocks();
-            List<Stock> topStocks = new List<Stock>();
+            List<Stock> increasedStocks = new List<Stock>();
             //var processDate = DateTime.Now; 
-            var processDate = new DateTime(2020, 05, 26);
+            var processDate = new DateTime(2020, 07, 10);
 
             foreach (var stock in stocks)
             {
@@ -30,41 +30,64 @@ namespace CbInvestingTool
                 {
                     IEnumerable<TradingDay> priceHistory = priceHistoryService.GetPriceHistory(stock.Symbol, DateTime.Now.AddDays(-365), DateTime.Now).OrderBy(x => x.Date);
                     Analyzer analyzer = new Analyzer(stocks, priceHistory);
-
-                    decimal percentR = analyzer.GetPercentR(stock.Symbol, processDate, 14);
-                    if (percentR > 0m && percentR <= 10m)
-                    {
-                        var closeLocationValue = analyzer.GetCloseLocationValue(stock.Symbol, processDate);
-
-                        if (closeLocationValue > 0.5m)
-                            Console.WriteLine("Top Stock: {0}, Pct: {1}, CLV: {2}", stock.Symbol, percentR, closeLocationValue);
-                    }
-
-                    /*var volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate, 20);
+                    var volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate, 20);
                     var senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol, processDate, 52);
                     var vwap = analyzer.GetVwap(stock.Symbol, processDate, 20);
+                    decimal percentR = analyzer.GetPercentR(stock.Symbol, processDate, 14);
+                    var closeLocationValue = analyzer.GetCloseLocationValue(stock.Symbol, processDate);
+
+                    stock.NetChange = 0m;
+                    if (priceHistory.Count() > 0 &&
+                        priceHistory.Any(x => x.Date.Date == processDate.Date) &&
+                        priceHistory.Any(x => x.Date.Date == processDate.AddDays(-1).Date)) {
+                        decimal lastClosePrice = priceHistory.Where(x => x.Date.Date == processDate.AddDays(-1).Date).First().ClosePrice;
+                        decimal openPrice = priceHistory.Where(x => x.Date.Date == processDate.Date).First().OpenPrice;
+
+                        if (openPrice > 0m && lastClosePrice > 0m &&
+                            openPrice - lastClosePrice > 0m)
+                        {
+                            var addToList = true;
+                            for (int i = priceHistory.Count() - 2; i >= priceHistory.Count() - 10; i--)
+                            {
+                                if (openPrice <= priceHistory.ElementAt(i).HighPrice)
+                                    addToList = false;
+                            }
+
+                            if (addToList)
+                            {
+                                stock.NetChange = openPrice - lastClosePrice;
+                                increasedStocks.Add(stock);
+                                Console.WriteLine("Symbol: {0}, Change: {1}, PctR: {2}, CLV: {3}, VWAP: {4}, Senoku: {5}", stock.Symbol, stock.NetChange, percentR, closeLocationValue, vwap, senokuSpanB);
+                            }
+                        }
+                    }
+
+                    /*Analyzer analyzer = new Analyzer(stocks, priceHistory);
+
+                    var volumeAverage = analyzer.GetVolumeAverage(stock.Symbol, processDate, 20);
+                    var senokuSpanB = analyzer.GetSenokuSpanB(stock.Symbol, processDate, 52);
+                    var vwap = analyzer.GetVwap(stock.Symbol, processDate, 20);
+                    decimal percentR = analyzer.GetPercentR(stock.Symbol, processDate, 14);
+                    var closeLocationValue = analyzer.GetCloseLocationValue(stock.Symbol, processDate);
 
                     if (volumeAverage > 0 && senokuSpanB > 0 && vwap > 0)
                     {
                         var tradingDay = priceHistory.Where(x => x.Date.Date <= processDate.Date).OrderByDescending(x => x.Date).First();
-                        var lastTypicalPrice = stock.LastPrice; //(tradingDay.HighPrice + tradingDay.LowPrice + tradingDay.ClosePrice) / 3;
+                        var lastTypicalPrice = (tradingDay.HighPrice + tradingDay.LowPrice + tradingDay.ClosePrice) / 3;
 
                         if (lastTypicalPrice < senokuSpanB 
                             && tradingDay.Volume > (volumeAverage * 0.5) &&
-                            tradingDay.OpenPrice > vwap && tradingDay.ClosePrice < vwap)
+                            tradingDay.OpenPrice > vwap && tradingDay.ClosePrice < vwap /*&&
+                            closeLocationValue > 0)
                         {
                             stock.SpanBPercentage = ((lastTypicalPrice / senokuSpanB));
                             topStocks.Add(stock);
+                            Console.WriteLine("Top Stock: {0}, Pct: {1}, CLV: {2}", stock.Symbol, stock.SpanBPercentage, percentR);
                         }                         
                     }*/
                 }                
             }
 
-            /*foreach (var stock in topStocks)
-            {
-                Console.WriteLine("Top Stock: {0}, Pct: {1}", stock.Symbol, stock.SpanBPercentage);
-            }*/
-            
             Console.WriteLine("DONE!");
             Console.ReadLine();
         }
